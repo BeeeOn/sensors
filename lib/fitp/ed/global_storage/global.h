@@ -7,8 +7,7 @@
 #ifndef X86
 struct GLOBAL_storage_t {
 
-    bool waiting_pair_response;
-    bool pair_mode;                 // coordinator accept pair messages (nid = 0x00000000)
+    bool waiting_join_response;
     bool routing_enabled;
     bool sleepy_device;
   
@@ -32,8 +31,7 @@ struct GLOBAL_storage_t {
 
 struct GLOBAL_storage_t {
 
-    bool waiting_pair_response;
-    bool pair_mode;                 // coordinator accept pair messages (nid = 0x00000000)
+    bool waiting_join_response;
     bool routing_enabled;
     bool sleepy_device;
   

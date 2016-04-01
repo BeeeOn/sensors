@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<simulator>
+	<ed>
+		<device id="0">
+			<group>0,10</group>
+			<rssi>10</rssi>
+			<edid>5,8,7,10</edid>
+			<cid>0</cid>
+			<nid>0,0,0,3</nid>
+			<channel>25</channel>
+			<bitrate>2</bitrate>
+			<band>3</band>
+		</device>
+	</ed>
+
+	<coord>
+		<device id="1">
+			<group>0,10</group>
+			<rssi>99</rssi>
+			<edid>9,8,7,6</edid>
+			<cid>2</cid>
+			<nid>0,0,0,1</nid>
+			<channel>25</channel>
+			<bitrate>2</bitrate>
+			<band>3</band>
+		</device>
+	</coord>
+
+	<pan>
+		<device id="10">
+			<group>0,10</group>
+			<rssi>10</rssi>
+			<nid>8,8,8,8</nid>
+			<channel>25</channel>
+			<bitrate>2</bitrate>
+			<band>3</band>
+		</device>
+	</pan>
+
+</simulator>

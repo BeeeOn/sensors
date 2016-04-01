@@ -24,7 +24,7 @@
 #define LINK_BUSY               0x08
 
 // ack data types
-#define LINK_ACK_JOIN_REQUEST   0x01
+#define LINK_ACK_JOIN_REQUEST   0x05
 
 /*LINK_COMMAND_MASK is used only in move
 1 response, 0 request
@@ -166,34 +166,6 @@ uint8_t get_free_index_tx(){
   
   return freeIndex;
 }
-
-void LINK_send_pair_mode(uint8_t* to)
-{
-   uint8_t packet[10];
-   packet[0]=1;
-   packet[1]=0;
-   packet[2]=0;
-   packet[3]=0;
-   packet[4]=0;
-   packet[5]= to[0];
-   packet[6]= to[1];
-   packet[7]= to[2];
-   packet[8]= to[3];
-   packet[9]= LINK_JOIN_CONTROL_RESPONSE;
-   printf("send pair mode\n");
-   PHY_send_with_cca(packet,10);
-}
-
-/*void LINK_pair_mode_recived(uint8_t* to)
-{
-    if(!GLOBAL_STORAGE.waiting_pair_response || (to[0] != GLOBAL_STORAGE.edid[0]) || (to[1] != GLOBAL_STORAGE.edid[1]) || (to[2] != GLOBAL_STORAGE.edid[2]) || (to[3] != GLOBAL_STORAGE.edid[3]))
-    {
-        printf("Message PAIR MODE is not for me.\n");
-        return;
-    }
-		printf("pair mode recived\n");
-		GLOBAL_STORAGE.waiting_pair_response = false;  
-}*/
 
 uint8_t get_free_index_rx(){
   uint8_t freeIndex = LINK_RX_BUFFER_SIZE;
@@ -663,6 +635,7 @@ void router_packet_proccess(uint8_t* data,uint8_t len){
  * Send join response directly to joining device
  */ 
 void LINK_send_join_response(uint8_t *to, uint8_t* payload, uint8_t len){
+    // uint8_t packet[25]; -> otestovat
     uint8_t packet[63];
     uint8_t packet_index=10;
     
@@ -709,7 +682,11 @@ void PHY_process_packet(uint8_t* data,uint8_t len) {
     
    
     // packet not in my network
-    if(!equal_arrays(data+1,GLOBAL_STORAGE.nid,4)) return;    
+    if(!equal_arrays(data+1,GLOBAL_STORAGE.nid,4)) return; 
+
+	if((data[0] & 0x0F) == LINK_DATA_WITHOUT_ACK)
+		printf("===================== WITHOUT_ACK =====================\n");
+	
     // packet to PAN's ED can be sent only from parent_cid, PAN does not have any parent    
     if((data[0] & LINK_ADDRESS_TYPE)) return;    
     // dont recive messages for coordinator if routing is disabled and data are recived

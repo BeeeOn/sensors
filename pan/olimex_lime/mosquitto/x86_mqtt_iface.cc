@@ -9,8 +9,12 @@
 #include <thread>
 #include "net.h"
 
-#define TOPIC_RX "BeeeOn/data_to_PAN"
-#define TOPIC_TX "BeeeOn/data_from_PAN"
+#include "simulator.h"
+#include <unistd.h> //get PID
+
+#define ADAAP_TOPIC_RX "BeeeOn/data_to_PAN"
+#define ADAAP_TOPIC_TX "BeeeOn/data_from_PAN"
+
 #define TIMEOUT 60
 #define RX_BUFFER_SIZE 128
 
@@ -29,8 +33,8 @@ mqtt_iface::mqtt_iface(const char *id, const char *host, int port, function<void
 	int rc = connect(host, port, TIMEOUT);
 	cout << "RC connect: " << rc << endl;
 	send_cbp = send_cb;
-	//loop_start();
-} 
+	loop_start();
+}
 
 mqtt_iface::~mqtt_iface() {
 }
@@ -50,7 +54,7 @@ void mqtt_iface::print_values(vector<int> v) {
 		for (int j=0; j<dataSize; j++) {
 			cout << setfill('0') << setw(2) << hex << v[++byteIndex];
 		}
-		cout << endl;		
+		cout << endl;
 	}
 }
 
@@ -67,14 +71,14 @@ void mqtt_iface::process_sensor_msg(const uint8_t from_edid[4], const uint8_t* d
 	for(std::vector<int>::iterator it = v.begin(); it != v.end(); it++) {
 			cout << to_string(*it) + ',';
 		}
-	
+
 	cout << endl;
 	if (v[0] == FROM_SENSOR_MSG) {
 		cout << "FROM_SENSOR_MSG" << endl;
-		cout << "PROTO VER: " << (v[1]) << endl;		
+		cout << "PROTO VER: " << (v[1]) << endl;
 		cout << "DEVICE ID: " << (v[2] << 8 | v[3]) << endl;
 		cout << "PAIRS: " << v[4] << endl;
-		
+
 		vector<int> vecValues = v;
 		vecValues.erase(vecValues.begin(), vecValues.begin() + 5);
 
@@ -85,18 +89,18 @@ void mqtt_iface::process_sensor_msg(const uint8_t from_edid[4], const uint8_t* d
 		for(i=0; i<4; i++) {
 			msg2ada += to_string(src_addr[i]) + ',';  // sensor address , EUID
 		}
-		msg2ada += to_string(0x64) + ',';  // rssi (hack)
+		msg2ada += to_string(0xcc) + ',';  // rssi (hack)
 		msg2ada += to_string(v[2]) + ',' + to_string(v[3]) + ','; // Device ID
 		msg2ada += to_string(v[4]) + ','; //Pairs
 		for(std::vector<int>::iterator it = vecValues.begin(); it != vecValues.end(); it++) {
 			msg2ada += to_string(*it) + ',';
 		}
 		cout << "Length:: " << msg2ada.length() << endl;
-		cout << hex << msg2ada << endl;	
+		cout << hex << msg2ada << endl;
 		publish(NULL, TOPIC_TX, msg2ada.length(), msg2ada.c_str());
-		
+
 	}
-	else if (v[0] == VPT_ANNOUNCEMENT) {  
+	else if (v[0] == VPT_ANNOUNCEMENT) {
 		// temporary workaround will be solved by new protocol
 		// with device id
 		cout << "VPT_ANNOUNCEMENT" << endl;
@@ -151,55 +155,55 @@ void mqtt_iface::proccess_adapter_msg(string msg) {
 		vec.push_back(stoi(token));
 		s.erase(0, pos + delimiter.length());
 	}
-	
+
 	if(vec[0] == SET_ACTORS) {
 		cout << "COMMAND: SET ACTORS" << endl;
 		cout << "DST ADDRESS: ";
 		unsigned int byte_index, i, j, proto_ver, value_count;
-		uint8_t dst_addr[4];        		
+		uint8_t dst_addr[4];
 		for(i=0; i<4; i++) {
 			dst_addr[i] = vec[i+2];
 			cout << "0x" << setfill('0') << setw(2) << hex << unsigned(dst_addr[i]) << " ";
 		}
-		cout << endl;        
+		cout << endl;
         proto_ver = vec[1];
         value_count = vec[6];
         cout << "PROTO VER: " << proto_ver << endl;
         cout << "NUMBER OF VALUES: " << value_count << endl;
-        
+
         byte_index = 7;
-        for(i=0; i<value_count; i++) {            
+        for(i=0; i<value_count; i++) {
             cout << "VALUE[" << i << "]:";
             cout << " module_id " << vec[byte_index++];
-            int len = vec[byte_index++]; 
+            int len = vec[byte_index++];
             cout << " LEN " << len;
             cout << " DATA ";
-            
+
             for (j=0; j<len; j++) {
                 cout << "0x" << setfill('0') << setw(2) << hex << vec[byte_index] << " ";
-                byte_index++;                           
+                byte_index++;
             }
-            cout << endl;                  
+            cout << endl;
         }
-        
+
         uint8_t sensor_msg[MAX_MSG_LEN];
 		uint8_t len;
-        
+
         sensor_msg[0] = SET_ACTORS;
         sensor_msg[1] = 0x01;
         len = 2;
-        
+
         for (i=6; i<vec.size(); i++) {
 			sensor_msg[i-4] = vec[i];
             len++;
 		}
-        
+
         cout << "TO SENSOR (" << dec << unsigned(len) << "): ";
 		for(i=0; i<len; i++) {
 			cout << "0x" << setfill('0') << setw(2) << hex << unsigned(sensor_msg[i]) << " ";
 		}
         cout << endl;
-        
+
         send_cbp(dst_addr, sensor_msg, len);
 	}
 	else if (vec[0] == SET_JOIN_MODE) {
@@ -219,31 +223,93 @@ void mqtt_iface::proccess_adapter_msg(string msg) {
 		}
 		cout << endl;
         NET_unjoin(dst_addr);
-		//uint8_t sensor_msg[1];
-		//sensor_msg[0] = UNPAIR_SENSOR;
-		//send_cbp(dst_addr, sensor_msg, 1);
 	}
 
 //	for(std::vector<int>::iterator it = vec.begin(); it != vec.end(); it++) {
 //		cout << *it << endl;
 //	}
-	
+
 }
 
 void mqtt_iface::on_message(const struct mosquitto_message *message) {
 	std::string msg_topic(message->topic);
 	std::string msg_text((const char*)message->payload);
-	if(msg_topic.compare(TOPIC_RX) == 0){
+
+	if (msg_topic.compare(DATA_TO_TOPIC) == 0 || msg_topic.compare(CONFIG_TOPIC) == 0) {
+
+		vector<int> vec;
+		string s(msg_text);
+		size_t pos = 0;
+		string token;
+		string delimiter = ",";
+
+		while ((pos = s.find(delimiter)) != std::string::npos) {
+			token = s.substr(0, pos);
+			vec.push_back(stoi(token));
+			s.erase(0, pos + delimiter.length());
+		}
+
+		uint8_t recived_packet[100];
+		int recived_len = 0;
+
+		for(std::vector<int>::iterator it = vec.begin(); it != vec.end(); it++) {
+			recived_packet[recived_len++] = (uint8_t)*it;
+		}
+
+		//overenie ci sa pid rovnaju, ci je sprava pre toto zariadenie
+		uint32_t id = 0;
+		bool pid = true;
+		if (recived_packet[0] == 0){
+			uint8_t len = recived_packet[1];
+
+			for (uint8_t i = 0; i< 4; i++)
+				//cout << unsigned(recived_packet[i+2]) <<"--"<< unsigned(GLOBAL_STORAGE.pid[i]) << endl;
+				if (recived_packet[i] != GLOBAL_STORAGE.pid[i]) {
+					pid = false;
+					break;
+				}
+		}
+		else
+			pid = false;
+
+		if (pid) {
+		//cout << "PAN: Message received on " << msg_topic << ": " << msg_text << endl;
+
+		if (msg_topic.compare(CONFIG_TOPIC) == 0 and pid) {
+			//cout << "PAN: Config data" << endl;
+
+			//preskocenie hlavicky - 8bajtov
+			set_config(recived_packet+8, recived_len-8);
+		}
+		else if (msg_topic.compare(DATA_TO_TOPIC) == 0 and pid) {
+				cout << "PAN: Recived data: ";
+
+				if(recived_len<63){
+					recived_packet[recived_len] = 0;
+				}
+
+				PHY_process_packet(recived_packet + 8 , recived_len - 8);
+
+				cout << endl;
+		}
 		cout << "-------------------------------------------------------------" << endl;
-		cout << "Message received on " << TOPIC_RX << ": " << msg_text << endl;
+	}
+	}
+	else if (msg_topic.compare(ADAAP_TOPIC_RX) == 0) {
+		cout << "-------------------------------------------------------------" << endl;
+		cout << "PAN: Message received on " << msg_topic << ": " << msg_text << endl;
+
+		cout << "PAN: ADAAP data" << endl;
 		proccess_adapter_msg(msg_text);
 	}
+
+
 }
 
 void mqtt_iface::on_connect(int rc) {
 	printf("Mosquito connecting with code %d.\n", rc);
 	if (rc == 0) {
-		subscribe(NULL, TOPIC_RX);
+		subscribe(NULL, "BeeeOn/#");
 	}
 }
 

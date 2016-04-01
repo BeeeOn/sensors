@@ -3,6 +3,7 @@
 #include "link.h"                          
 #include "log.h"
 
+#define LINK_NOACK 0x01
 
 typedef struct{
   uint8_t type;
@@ -82,7 +83,7 @@ void LINK_join_response_recived(uint8_t* payload, uint8_t len){
         GLOBAL_STORAGE.nid[2] = payload[12]; 
         GLOBAL_STORAGE.nid[3] = payload[13];    
         GLOBAL_STORAGE.parent_cid = payload[14];
-        D_NET printf("LINK_join_response_recived(): NID %02x %02x %02x %02x parent %02x\n", \
+        D_NET printf("LINK_join_response_recived(): NID %02x %02x %02x %02x PARENT CID %02x\n", \
                        GLOBAL_STORAGE.nid[0], GLOBAL_STORAGE.nid[1], \
                        GLOBAL_STORAGE.nid[2], GLOBAL_STORAGE.nid[3], \
                        GLOBAL_STORAGE.parent_cid);
@@ -194,7 +195,9 @@ bool NET_send(uint8_t tocoord, uint8_t* toed, uint8_t* data, uint8_t len){
     // @TODO use #define to choose link_transfer
     uint8_t toedid[4];
     uint8_t i;
-    
+    send(PT_DATA_DR, tocoord, toedid, data, len, LINK_NOACK);
+	return true;
+	
     if (toed != NULL) array_copy(toed, toedid, 4);
     else array_copy(NET_DIRECT_COORD, toedid, 4);
     
@@ -239,11 +242,12 @@ bool NET_send(uint8_t tocoord, uint8_t* toed, uint8_t* data, uint8_t len){
 /*
  * Send join request
  */
-bool NET_join(){    
+bool NET_join(){ 
+    // staci uint8_t packet[10];??? -> otestovat   
     uint8_t tmp[53];
     uint8_t index=0;
     
-    if (GLOBAL_STORAGE.waiting_pair_response) return false;
+    if (GLOBAL_STORAGE.waiting_join_response) return false;
     
     tmp[index++]=(PT_DATA_JOIN_REQUEST << 4) & 0xF0;
     if (GLOBAL_STORAGE.sleepy_device) {  // second byte in join request packet 
@@ -262,20 +266,20 @@ bool NET_join(){
     tmp[index++]=GLOBAL_STORAGE.edid[3];
     
      
-    GLOBAL_STORAGE.waiting_pair_response = true;    
+    GLOBAL_STORAGE.waiting_join_response = true;    
     if (LINK_send_join_request(tmp, index)) {
-        D_NET printf("NET_join(): link ack request received\n");
+        printf("NET_join(): link ack request received\n");
         for (uint8_t i=0; i<100; i++) {  // wait for i * delay_ms()
             delay_ms(10);
-            if (GLOBAL_STORAGE.waiting_pair_response == false) {
+            if (!GLOBAL_STORAGE.waiting_join_response) {
                 break;
             }                        
         }
     }    
     
-    if (GLOBAL_STORAGE.waiting_pair_response) {
-        D_NET printf("NET_join(): timeout\n");
-        GLOBAL_STORAGE.waiting_pair_response = false;
+    if (GLOBAL_STORAGE.waiting_join_response) {
+        printf("NET_join(): timeout\n");
+        GLOBAL_STORAGE.waiting_join_response = false;
         return false;
     }     
     

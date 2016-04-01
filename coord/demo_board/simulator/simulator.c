@@ -23,8 +23,8 @@ void set_config(uint8_t *msg, uint8_t len) {
 					printf("EDID: %d\n", GLOBAL_STORAGE.edid[j]);
 					break;
 				case 2:
-					GLOBAL_STORAGE.parent_cid = msg[i+j];
-					printf("CID: %d\n", GLOBAL_STORAGE.parent_cid);
+					GLOBAL_STORAGE.cid = msg[i+j];
+					printf("CID: %d\n", GLOBAL_STORAGE.cid);
 					break;
 				case 3:
 					GLOBAL_STORAGE.nid[j] = msg[i+j];
@@ -62,12 +62,14 @@ void set_config(uint8_t *msg, uint8_t len) {
 					GLOBAL_STORAGE.data[j] = msg[i+j];
 					printf("DATA: %d\n", GLOBAL_STORAGE.data[j]);
 					break;
-				case 12:
-					GLOBAL_STORAGE.refresh_time = msg[i+j];
-					printf("REFRESH_TIME: %d\n", GLOBAL_STORAGE.refresh_time);
+				case 13:
+					GLOBAL_STORAGE.parent_cid = msg[i+j];
+					printf("PCID: %d\n", GLOBAL_STORAGE.parent_cid);
 					break;
 			}
 		}
+
+
 
 		i += dlzka_hodnoty; //preskocenie dat a pokracovanie na dalsiu hodnotu
 	}
@@ -98,8 +100,8 @@ void run_cmd(uint8_t cmd) {
 			for (int i =0; i < 4; i++)
 				msg += to_string(GLOBAL_STORAGE.edid[i]) + ",";
 
-			//PCID
-			msg += "2,1," + to_string(GLOBAL_STORAGE.parent_cid) + ",";
+			//CID
+			msg += "2,1," + to_string(GLOBAL_STORAGE.cid) + ",";
 
 			//NID
 			msg += "3,4,";
@@ -118,10 +120,8 @@ void run_cmd(uint8_t cmd) {
 			//RSSI
 			msg += "7,1," + to_string(GLOBAL_STORAGE.rssi) + ",";
 
-			//REFRESH_TIME
-			msg += "12,1," + to_string(GLOBAL_STORAGE.refresh_time) + ",";
-
-
+			//PCID
+			msg += "13,1," + to_string(GLOBAL_STORAGE.parent_cid) + ",";
 
 			mq->publish(NULL, "BeeeOn/config_from", msg.length(), msg.c_str());
 			}

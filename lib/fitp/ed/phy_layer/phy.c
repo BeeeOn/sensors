@@ -380,6 +380,15 @@ bool PHY_set_freq   (uint8_t band){
   return holder;
 }
 
+/**
+ * @brief get a channel
+ */
+uint8_t PHY_get_channel(void)
+{
+    printf("Channel: %d\n", PHY_STORAGE.channel);
+    return PHY_STORAGE.channel;
+}
+
 bool PHY_set_channel (uint8_t channel){
   if(channel == PHY_STORAGE.channel) return true;
   bool holder = set_chanel_freq_rate (channel, PHY_STORAGE.band, PHY_STORAGE.bitrate);

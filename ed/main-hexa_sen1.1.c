@@ -5,18 +5,18 @@
 extern bool accel_int;
 
 uint8_t fitp_recived(const uint8_t from_cid, const uint8_t from_edid[4], const uint8_t* data, const uint8_t len, const uint8_t part) {
-    printf("ED received data: ");
+    D_G printf("ED received data: ");
     for(uint8_t i=0; i<len; i++) {
-        printf("%d ", data[i]);
+        D_G printf("%d ", data[i]);
     }
-    printf("\n");
+    D_G printf("\n");
     if(data[0] == SET_ACTORS) {
         setActors(data+2);  // skip message type and protocol version
     }    
 }
 
 bool fitp_accept_join(uint8_t nid[4], uint8_t parent_cid) {
-    printf("acepting join: true");
+    printf("acepting join: true\n");
     return true;
 }
 
@@ -65,11 +65,9 @@ void main(void) {
     */
              
     GLOBAL_STORAGE.sleepy_device = true;
-    GLOBAL_STORAGE.refresh_time = 30;
     
-    //clean EEPROM before first write
-    //spieepromClean();
     euid_load(); // load euid from eeprom
+    refresh_load_eeprom();
     
     accel_int = false;
     while (1) {       
@@ -111,7 +109,10 @@ void main(void) {
         }   
         
         HW_DeInit();
-        if(GLOBAL_STORAGE.refresh_time < 3) GLOBAL_STORAGE.refresh_time = 3;  // if too short time         
+        if(GLOBAL_STORAGE.refresh_time < 3) {
+        	GLOBAL_STORAGE.refresh_time = 3;  // if too short time         
+        	save_refresh_eeprom(GLOBAL_STORAGE.refresh_time); //save refresh time on eeprom
+        }
         StartTimer(GLOBAL_STORAGE.refresh_time - 2);  // -2 because ds_prepare takes up to 2seconds 
         //LED1 = 0;
         goSleep();

@@ -59,7 +59,7 @@ uint8_t OwReadBit(void) {
 }
 
 int8_t OwReadByte(void) {
-    uint8_t result=0;
+    int8_t result=0;
 
     for (uint8_t i= 0; i < 8; i++)
         result = (OwReadBit() << i) | result;
@@ -76,21 +76,27 @@ void ds_prepare() {
 }
 
 void ds_get_temp(int32_t *res) {
+	static int32_t tmp = INT32_MAX;
+	
     OwReset();
     OwWriteByte(0xCC);
     OwWriteByte(0xbe);
     
-    uint8_t temp_low = OwReadByte();
-    uint8_t temp_high = OwReadByte();
+    int8_t temp_low = OwReadByte();
+    int8_t temp_high = OwReadByte();
 
     if (OwReset() == 0) {
         //printf("Nie je pripojeny senzor (OwReset() hlasi nenalezeno)\n");
-        *res = UINT32_MAX;
+        *res = INT32_MAX;
         return;
     }
     
     *res = (temp_high << 4) | ((temp_low & 0xf0) >> 4);
     *res *= 100;
     *res |= temp_low & 0x0f;
+    
+    if (*res == 8500)
+ 		*res = tmp;
+ 	tmp = *res;
     //printf("DS18b20Temp::%d\n",*res);
 }

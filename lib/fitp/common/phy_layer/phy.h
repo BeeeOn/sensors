@@ -149,5 +149,5 @@ extern void PHY_process_packet(uint8_t* data, uint8_t len);
 extern void PHY_timer_interupt (void);
 
 void    set_rf_mode (uint8_t mode);
-
+uint8_t PHY_get_channel(void);
 #endif

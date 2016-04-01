@@ -21,6 +21,7 @@
 #define EUID_ADRESS_LEN      4
 
 void load_euid_eeprom();
+void save_refresh_eeprom(uint16_t val);
 
 
 

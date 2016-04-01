@@ -59,26 +59,22 @@ void mqtt_iface::on_message(const struct mosquitto_message *message) {
 
 		//preskocenie ak udaje nepatrili spravnemu zariadeniu
 		if (pid) {
-
-			//cout << "ED: Message received on " << msg_topic << ": " << msg_text << endl;
+			//cout << "COORD: Message received on " << msg_topic << ": " << msg_text << endl;
 
 			if(msg_topic.compare(CONFIG_TOPIC) == 0) {
 				//Config
-				//cout << "ED CONFIG DATA::" << endl;
+				//cout << "COORD CONFIG DATA::" << endl;
 
 				//preskocenie hlavicky - 8bajtov
 				set_config(recived_packet+8, recived_len-8);
 
 			} else {
 				//Data
-				printf("ED Data: \n");
 			       if(recived_len<63)
 					recived_packet[recived_len]=0;
-
 			       PHY_process_packet(recived_packet + 8 , recived_len - 8);
 			}
 			cout << "-------------------------------------------------------------" << endl;
-
 		}
 
 

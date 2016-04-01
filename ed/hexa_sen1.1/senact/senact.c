@@ -33,6 +33,7 @@ void getRefreshTime(void *p) {
 void setRefreshTime(void *p) {
     //refresh_time = (uint16_t *) p;
     GLOBAL_STORAGE.refresh_time = (uint16_t) ((((uint8_t *) p)[0] << 8) | ((uint8_t *) p)[1]);
+    save_refresh_eeprom(GLOBAL_STORAGE.refresh_time); //save refresh time on eeprom
     //printf("setRefreshTime() %d\n", refresh_time);
 }
 
@@ -102,7 +103,7 @@ void setActors(uint8_t *data){
     uint8_t i, dataLen, pairs, module_id;
     
     pairs = data[0];    
-    printf("PAIRS: %d\n", pairs);
+    D_G printf("PAIRS: %d\n", pairs);
     data++;
     
     for(i=0; i<pairs; i++) {
@@ -110,7 +111,7 @@ void setActors(uint8_t *data){
         data++;
         dataLen = data[0];
         data++;
-        printf("DATA %d Module id: %d len: %d\n", data[0], module_id, dataLen);
+        D_G printf("DATA %d Module id: %d len: %d\n", data[0], module_id, dataLen);
         setActor(module_id, (void *) data);  
         data += dataLen;
      }    
@@ -156,7 +157,7 @@ bool sendValues(void) {
                 *(buf + byteIndex) = measured_value[senactList[i].len - j - 1];  
                 byteIndex++;
             }        
-            printf("\n");
+            D_G printf("\n");
             sp->pairs++;
         }
 

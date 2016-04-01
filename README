@@ -1,0 +1,65 @@
+NEEDED PACKAGES for Ubuntu 15.10 - install.sh
+
+Download repository
+============================
+git clone login@ant-2.fit.vutbr.cz:/srv/git/iot/sensors.git sensor
+cd sensor/
+git checkout devel
+
+
+COMPILE ED - hw platform
+===========================
+./build.sh -t ed -p hw
+
+
+COMPILE PAN - hw platform
+===========================
+. /usr/local/oecore-i686/environment-setup-armv7a-vfp-neon-oe-linux-gnueabi
+./build.sh -t pan -p hw
+
+
+COMPILE ED - x86 platform
+===========================
+./build.sh -t ed -p hw
+
+
+COMPILE PAN - x86 platform
+===========================
+./build.sh -t pan -p hw
+
+
+START SIMULATOR
+===========================
+./simulator.py
+
+
+START SIMULATOR COMMAND PROMPT
+===========================
+./run.py
+
+
+-------------------------------------------------------------------
+-				             SUPPORT COMMAND            		  -
+-------------------------------------------------------------------
+
+SIMULATOR COMMAND FOR ED
+===========================
+start_joining                                              //start timer
+
+
+SIMULATOR COMMAND FOR ED
+===========================
+fitp_joing                                                 //send pair message
+
+
+SIMULATOR COMMAND FOR PAN, COORD, ED
+===========================
+fitp_send(tocoord=x;toed=x-x-x-x;data=x-x-x;data_len=x)    //odosle spravu
+get_config                                                 //prikazom sa vypisu konfiguracne udaje zariadenia
+sleep(time=x)                                              //zariadenie sa uspy na urcity cas
+set_refresh_time(time=x)                                   //nastavenie casu pre spanok, v tomto case zariadenie ignoruje vsetky spravy
+set_rssi(rssi=x)                                           //nastavenie rssi
+set_channel(channel=x)                                     //nastavenie kanalu, ktorom pracuje
+set_bitrate(bitrate=x)                                     //nastavenie bitrate
+set_band(band=x)                                           //nastavenie band
+reset                                                      //prikaz, ktory zamedzi opakovaniu sa prikazov
